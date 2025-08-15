@@ -59,14 +59,12 @@ export function LoginForm() {
         description: "You have successfully signed in.",
       });
       router.push('/dashboard');
-      router.refresh();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
         description: error.message || "There was a problem with your request.",
       });
-    } finally {
       setIsLoading(false);
     }
   }

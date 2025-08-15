@@ -40,14 +40,12 @@ export function GoogleSignInButton() {
         description: `Welcome ${additionalInfo?.isNewUser ? '' : 'back, '}${user.displayName || 'User'}!`,
       });
       router.push('/dashboard');
-      router.refresh();
     } catch (error: any) {
       toast({
         variant: "destructive",
         title: "Uh oh! Something went wrong.",
         description: error.message || "Could not sign in with Google.",
       });
-    } finally {
       setIsLoading(false);
     }
   };
