@@ -50,9 +50,15 @@ export default function DashboardPage() {
     setFileName('');
     localStorage.removeItem('parsedData');
     localStorage.removeItem('fileName');
+    toast({
+        title: "Data cleared",
+        description: "Upload a new file to continue.",
+    });
   };
   
   const handleDummyData = () => {
+    localStorage.setItem('parsedData', JSON.stringify(dummyData));
+    localStorage.setItem('fileName', 'dummy-data.json');
     setParsedData(dummyData);
     setFileName('dummy-data.json');
     toast({
@@ -64,7 +70,7 @@ export default function DashboardPage() {
   return (
     <main className="flex-grow p-4 md:p-8">
     {!parsedData ? (
-      <div className="flex items-center justify-center h-[calc(100vh-10rem)]">
+      <div className="flex items-center justify-center h-full min-h-[calc(100vh-10rem)]">
         <Card className="w-full max-w-lg text-center">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
@@ -72,7 +78,7 @@ export default function DashboardPage() {
                 </div>
                 <CardTitle>No Data Uploaded</CardTitle>
                 <CardDescription>
-                Upload a file to start generating beautiful and insightful charts for your dashboard, or generate some dummy data to get started.
+                Upload a file to start generating beautiful and insightful charts, or use dummy data to explore.
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center gap-4">

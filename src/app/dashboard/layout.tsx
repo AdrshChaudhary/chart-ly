@@ -15,6 +15,7 @@ import {
 import Header from '@/components/header';
 import { Settings, PanelsTopLeft, FileUp } from 'lucide-react';
 import { usePathname } from 'next/navigation';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function DashboardLayout({
   children,
@@ -22,6 +23,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  
+  if (!user) {
+    return null;
+  }
   
   return (
     <SidebarProvider>
