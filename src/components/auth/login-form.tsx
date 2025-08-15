@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { signInWithEmailAndPassword } from "firebase/auth";
+import { signInWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { Loader2, KeyRound, Mail } from "lucide-react";
 
@@ -38,13 +38,12 @@ export function LoginForm() {
       const user = userCredential.user;
 
       if (!user.emailVerified) {
+        await sendEmailVerification(user);
         toast({
           variant: "destructive",
           title: "Email not verified",
           description: "Please verify your email before logging in. A new verification email has been sent.",
         });
-        // Optionally, resend verification email
-        // await sendEmailVerification(user);
         setIsLoading(false);
         return;
       }
