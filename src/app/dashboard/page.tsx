@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { detectColumnTypes, ColumnInfo } from '@/lib/chart-utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { AIInsights } from '@/components/ai-insights';
 
 export type ParsedData = {
   data: any[];
@@ -140,13 +141,17 @@ export default function DashboardPage() {
     return numericColumns.slice(0, 4).map(col => {
       const total = filteredData.reduce((sum, row) => sum + (Number(row[col.name]) || 0), 0);
       let value: string;
-      let description: string | undefined;
-
-      if (total > 1_000_000) {
-        value = `$${(total / 1_000_000).toFixed(1)}M`;
-      } else if (total > 1_000) {
-        value = `$${(total / 1_000).toFixed(1)}K`;
-      } else {
+      
+      if (col.name.toLowerCase().includes('sale') || col.name.toLowerCase().includes('profit') || col.name.toLowerCase().includes('expense')) {
+        if (total > 1_000_000) {
+          value = `$${(total / 1_000_000).toFixed(1)}M`;
+        } else if (total > 1_000) {
+          value = `$${(total / 1_000).toFixed(1)}K`;
+        } else {
+            value = `$${total.toLocaleString()}`;
+        }
+      }
+      else {
         value = total.toLocaleString();
       }
       
@@ -237,6 +242,8 @@ export default function DashboardPage() {
             </div>
           )}
           
+          <AIInsights data={filteredData || []} />
+
           <ChartGrid data={filteredData || []} />
         </div>
       )}
