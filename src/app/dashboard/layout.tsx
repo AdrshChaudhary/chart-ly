@@ -6,7 +6,6 @@ import {
   Sidebar,
   SidebarProvider,
   SidebarContent,
-  SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
@@ -29,7 +28,7 @@ export default function DashboardLayout({
         <div className="flex flex-col min-h-screen bg-secondary/50">
             <Header />
             <div className="flex flex-1">
-                <Sidebar collapsible="icon" className="group-data-[variant=floating]:hidden">
+                <Sidebar>
                     <SidebarContent>
                     <SidebarMenu>
                         <SidebarMenuItem>
