@@ -49,14 +49,14 @@ export function detectColumnTypes(data: any[]): ColumnInfo[] {
   });
 }
 
-export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'pie')[] {
-  const suggestions = new Set<'line' | 'bar' | 'pie'>();
+export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'pie' | 'scatter' | 'radar')[] {
+  const suggestions = new Set<'line' | 'bar' | 'pie' | 'scatter' | 'radar'>();
   
-  const numericCols = columns.filter(c => c.type === 'numeric').length;
+  const numericCols = columns.filter(c => c.type === 'numeric');
   const dateCols = columns.filter(c => c.type === 'date').length;
   const categoricalCols = columns.filter(c => c.type === 'categorical').length;
 
-  if (numericCols >= 1) {
+  if (numericCols.length >= 1) {
     if (dateCols >= 1) {
       suggestions.add('line');
     }
@@ -64,6 +64,14 @@ export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'p
       suggestions.add('bar');
       suggestions.add('pie');
     }
+  }
+
+  if (numericCols.length >= 2) {
+      suggestions.add('scatter');
+  }
+
+  if (categoricalCols >= 1 && numericCols.length >= 2) {
+      suggestions.add('radar');
   }
   
   return Array.from(suggestions);

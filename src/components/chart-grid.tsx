@@ -6,6 +6,8 @@ import { detectColumnTypes, getChartSuggestions } from '@/lib/chart-utils';
 import LineChartComponent from './charts/line-chart';
 import BarChartComponent from './charts/bar-chart';
 import PieChartComponent from './charts/pie-chart';
+import ScatterChartComponent from './charts/scatter-chart';
+import RadarChartComponent from './charts/radar-chart';
 
 interface ChartGridProps {
   data: any[];
@@ -65,6 +67,26 @@ export function ChartGrid({ data }: ChartGridProps) {
           </CardHeader>
           <CardContent>
             <PieChartComponent data={data} columnInfo={columnInfo} />
+          </CardContent>
+        </Card>
+      )}
+      {suggestions.includes('scatter') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Scatter Chart</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ScatterChartComponent data={data} columnInfo={columnInfo} />
+          </CardContent>
+        </Card>
+      )}
+      {suggestions.includes('radar') && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Radar Chart</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <RadarChartComponent data={data} columnInfo={columnInfo} />
           </CardContent>
         </Card>
       )}
