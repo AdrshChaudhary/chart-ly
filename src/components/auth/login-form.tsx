@@ -16,7 +16,7 @@ import { Loader2, KeyRound, Mail } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  password: z.string().min(1, { message: "Password is required." }),
 });
 
 export function LoginForm() {
@@ -41,31 +41,42 @@ export function LoginForm() {
       if (!user.emailVerified) {
         await sendEmailVerification(user);
         toast({
-          variant: "destructive",
           title: "Email not verified",
-          description: "Please verify your email before logging in. A new verification email has been sent.",
+          description: "Please check your inbox to verify your email before logging in. A new verification link has been sent.",
+          variant: "destructive",
         });
         setIsLoading(false);
         return;
       }
 
       const idToken = await user.getIdToken();
-
-      // Set cookie
-      document.cookie = `token=${idToken}; path=/; max-age=86400;`; // 1 day expiry
+      document.cookie = `token=${idToken}; path=/; max-age=86400;`;
 
       toast({
-        title: "Success!",
-        description: "You have successfully signed in.",
+        title: "Signed In Successfully!",
+        description: "Welcome back!",
       });
       router.push('/dashboard');
-      router.refresh();
     } catch (error: any) {
+      let errorMessage = "An unknown error occurred.";
+      switch (error.code) {
+        case "auth/user-not-found":
+        case "auth/wrong-password":
+          errorMessage = "Invalid email or password. Please try again.";
+          break;
+        case "auth/too-many-requests":
+            errorMessage = "Too many failed login attempts. Please try again later.";
+            break;
+        default:
+            errorMessage = error.message;
+            break;
+      }
       toast({
         variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error.message || "There was a problem with your request.",
+        title: "Authentication Failed",
+        description: errorMessage,
       });
+    } finally {
       setIsLoading(false);
     }
   }

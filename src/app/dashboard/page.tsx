@@ -5,9 +5,10 @@ import * as React from 'react';
 import { ChartGrid } from '@/components/chart-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { FileUp } from 'lucide-react';
+import { Upload } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 export type ParsedData = {
   data: any[];
@@ -35,38 +36,39 @@ export default function DashboardPage() {
   const [parsedData, setParsedData] = React.useState<ParsedData | null>(null);
   const [fileName, setFileName] = React.useState<string>('');
   const { toast } = useToast();
+  const router = useRouter();
+  const searchParams = useSearchParams();
 
   React.useEffect(() => {
-    const storedData = localStorage.getItem('parsedData');
-    const storedFileName = localStorage.getItem('fileName');
-    if (storedData) {
-      try {
-        setParsedData(JSON.parse(storedData));
-        if (storedFileName) {
-          setFileName(storedFileName);
+    const data = searchParams.get('data');
+    if (data) {
+        try {
+            const decodedData = JSON.parse(decodeURIComponent(data));
+            setParsedData(decodedData.parsedData);
+            setFileName(decodedData.fileName);
+            toast({
+                title: "File processed successfully!",
+                description: `Showing dashboard for ${decodedData.fileName}`
+            });
+            // Clean up URL
+            router.replace('/dashboard', { scroll: false });
+        } catch (e) {
+            console.error('Failed to parse data from URL', e);
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not load data from the previous page.'
+            });
         }
-      } catch (error) {
-        console.error("Failed to parse data from localStorage", error);
-        localStorage.removeItem('parsedData');
-        localStorage.removeItem('fileName');
-      }
     }
-  }, []);
+  }, [searchParams, router, toast]);
 
   const handleReset = () => {
     setParsedData(null);
     setFileName('');
-    localStorage.removeItem('parsedData');
-    localStorage.removeItem('fileName');
-    toast({
-        title: "Data cleared",
-        description: "Upload a new file to continue.",
-    });
   };
   
   const handleDummyData = () => {
-    localStorage.setItem('parsedData', JSON.stringify(dummyData));
-    localStorage.setItem('fileName', 'dummy-data.json');
     setParsedData(dummyData);
     setFileName('dummy-data.json');
     toast({
@@ -76,17 +78,17 @@ export default function DashboardPage() {
   }
 
   return (
-    <main className="flex-grow p-4 md:p-8">
+    <>
     {!parsedData ? (
-      <div className="flex items-center justify-center h-full min-h-[calc(100vh-10rem)]">
-        <Card className="w-full max-w-lg text-center">
+      <div className="flex items-center justify-center h-full min-h-[calc(100vh-8rem)]">
+        <Card className="w-full max-w-lg text-center shadow-none border-0 bg-transparent">
             <CardHeader>
                 <div className="mx-auto bg-primary/10 p-4 rounded-full w-fit mb-4">
-                    <FileUp className="h-8 w-8 text-primary" />
+                    <Upload className="h-8 w-8 text-primary" />
                 </div>
-                <CardTitle>No Data Uploaded</CardTitle>
+                <CardTitle>Visualize Your Data</CardTitle>
                 <CardDescription>
-                Upload a file to start generating beautiful and insightful charts, or use dummy data to explore.
+                Upload a file to start generating beautiful and insightful charts, or use dummy data to explore the possibilities.
                 </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center gap-4">
@@ -103,7 +105,7 @@ export default function DashboardPage() {
       <div>
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
             <p className="text-muted-foreground">Showing visualizations for {fileName}</p>
           </div>
           <div className="flex gap-2">
@@ -116,6 +118,6 @@ export default function DashboardPage() {
         <ChartGrid data={parsedData.data} />
       </div>
     )}
-  </main>
+    </>
   );
 }

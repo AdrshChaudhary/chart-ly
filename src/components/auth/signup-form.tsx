@@ -16,7 +16,7 @@ import { Loader2, KeyRound, Mail, User } from "lucide-react";
 const formSchema = z.object({
   name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }),
-  password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  password: z.string().min(8, { message: "Password must be at least 8 characters." }),
   confirmPassword: z.string()
 }).refine(data => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -50,19 +50,22 @@ export function SignupForm() {
 
       await sendEmailVerification(user);
       
-      // We are not setting the cookie here, user will be redirected to verify email page
-      // And will login after verification.
-
       toast({
         title: "Account Created!",
-        description: "A verification email has been sent. Please verify your email before logging in.",
+        description: "A verification email has been sent to your inbox. Please verify your email to log in.",
       });
       router.push('/verify-email');
     } catch (error: any) {
+      let errorMessage = "An unknown error occurred.";
+       if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email address is already in use. Please use a different email.';
+      } else {
+        errorMessage = error.message;
+      }
       toast({
         variant: "destructive",
-        title: "Uh oh! Something went wrong.",
-        description: error.message || "There was a problem with your request.",
+        title: "Sign Up Failed",
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
