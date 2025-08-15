@@ -1,54 +1,71 @@
 # Prompt for Building the Python Backend for Chartly
 
-## Project Overview
+## Persona
 
-You are building the Python backend for a web application called "Chartly." The frontend is built with Next.js and allows users to upload data files (CSV, XLSX, JSON) and instantly see an interactive, Power BI-style dashboard with charts and AI-generated insights.
+You are an expert Python backend developer specializing in creating robust, scalable, and efficient APIs for data-driven web applications. Your code is clean, well-documented, and production-ready.
 
-The frontend is already complete. Your task is to build the Python backend that will handle all the data processing, chart recommendations, and AI analysis using the Google Gemini API. The backend should be a separate service (using a framework like Flask or FastAPI) that the Next.js application will call.
+---
+
+## Project Overview & Goal
+
+You are tasked with building the Python backend for a web application called "Chartly." The frontend, built with Next.js, is **already complete**. It allows users to upload data files (CSV, XLSX, JSON) and view an interactive, Power BI-style dashboard.
+
+Your **sole responsibility** is to create a standalone Python web service that will handle all data processing, chart recommendations, and AI-powered analysis. The Next.js frontend will communicate with your Python service via the API endpoints you create.
+
+---
 
 ## Core Task
 
-Create two API endpoints in Python that will receive data from the Next.js frontend, process it, and return the results.
+Create a Python web service using **FastAPI** that exposes two API endpoints. This service will receive data from the Next.js frontend, process it, and return JSON responses according to the strict contracts defined below.
 
 ---
 
 ### Endpoint 1: Chart Suggestions
 
-This endpoint is responsible for analyzing the structure of the uploaded data and suggesting the most appropriate chart types to visualize it.
+This endpoint analyzes the structure of an uploaded dataset and suggests appropriate chart types.
 
-*   **URL:** `/api/charts/suggestions`
-*   **Method:** `POST`
-*   **Request Body (JSON):**
-    ```json
-    {
-      "data": [
-        { "column1": "valueA", "column2": 10, "column3": "2023-01-01" },
-        { "column1": "valueB", "column2": 20, "column3": "2023-02-01" },
-        // ... more rows
-      ]
-    }
-    ```
-*   **Backend Logic:**
-    1.  Receive the JSON data.
-    2.  **Detect Column Types:** Analyze the columns in the dataset. For each column, determine if it is `numeric`, `date`, or `categorical` (string/text). You should implement robust logic for this, similar to the `detectColumnTypes` function in the frontend's `src/lib/chart-utils.ts` file provided below for context.
-    3.  **Generate Chart Suggestions:** Based on the identified column types, recommend a list of suitable charts. Use the following rules:
-        *   `line` or `area`: If there is at least one `date` or `categorical` column and at least one `numeric` column.
-        *   `bar` or `pie`: If there is at least one `categorical` column and at least one `numeric` column.
-        *   `scatter`: If there are at least two `numeric` columns.
-        *   `radar`: If there is at least one `categorical` column and at least two `numeric` columns.
-    4.  Return the results in the specified JSON format.
+- **URL:** `/api/charts/suggestions`
+- **Method:** `POST`
+- **Request Body Contract (JSON):**
+  ```json
+  {
+    "data": [
+      { "column1": "valueA", "column2": 10, "column3": "2023-01-01" },
+      { "column1": "valueB", "column2": 20, "column3": "2023-02-01" },
+      // ... more rows
+    ]
+  }
+  ```
 
-*   **Success Response (JSON):**
-    ```json
-    {
-      "suggestions": ["line", "bar", "pie", "scatter", "radar", "area"],
-      "columnInfo": [
-        { "name": "column1", "type": "categorical" },
-        { "name": "column2", "type": "numeric" },
-        { "name": "column3", "type": "date" }
-      ]
-    }
-    ```
+- **Backend Logic (Step-by-Step):**
+    1.  **Receive and Validate:** Accept the JSON payload. Ensure the `data` key exists and is a non-empty list of objects. If not, return a 400 Bad Request error.
+    2.  **Detect Column Types:** For each column in the dataset, you must implement a robust function to determine its data type. Classify each column as one of `numeric`, `date`, or `categorical`.
+        - A column is `numeric` if over 80% of its non-null values are numbers (integers or floats).
+        - A column is `date` if over 80% of its non-null string values can be successfully parsed as a date.
+        - Otherwise, a column is `categorical`.
+    3.  **Generate Chart Suggestions:** Based on the array of identified column types, recommend a list of suitable charts using these specific rules:
+        - `line` or `area`: Requires at least one `date` OR `categorical` column, AND at least one `numeric` column.
+        - `bar` or `pie`: Requires at least one `categorical` column AND at least one `numeric` column.
+        - `scatter`: Requires at least two `numeric` columns.
+        - `radar`: Requires at least one `categorical` column AND at least two `numeric` columns.
+    4.  **Construct and Return Response:** Return a 200 OK response with a JSON body matching the `Success Response Contract` exactly.
+
+- **Success Response Contract (JSON):**
+  ```json
+  {
+    "suggestions": ["line", "bar", "pie", "scatter", "radar", "area"],
+    "columnInfo": [
+      { "name": "column1", "type": "categorical" },
+      { "name": "column2", "type": "numeric" },
+      { "name": "column3", "type": "date" }
+    ]
+  }
+  ```
+- **Error Response Contract (JSON):**
+  ```json
+  // Status: 400 Bad Request
+  { "detail": "Invalid data format. 'data' must be a non-empty array." }
+  ```
 
 ---
 
@@ -56,86 +73,79 @@ This endpoint is responsible for analyzing the structure of the uploaded data an
 
 This endpoint uses the Google Gemini API to generate a textual analysis of the provided data.
 
-*   **URL:** `/api/insights`
-*   **Method:** `POST`
-*   **Request Body (JSON):**
-    ```json
-    {
-      "data": [
-        { "month": "Jan 2023", "sales": 4000, "profit": 2400 },
-        { "month": "Feb 2023", "sales": 3000, "profit": 1398 },
-        // ... more rows
-      ]
-    }
-    ```
-*   **Backend Logic:**
-    1.  Receive the JSON data.
-    2.  Construct a detailed prompt for the Google Gemini API. The prompt should instruct the model to act as a data analyst, analyze the provided JSON data, and identify key trends, outliers, and significant findings. The output should be a concise, bulleted list formatted in Markdown.
-    3.  Send the request to the Gemini API. You will need to use the `google.generativeai` Python library.
-    4.  Receive the response from Gemini and format it as a single string.
-    5.  Return the analysis in the specified JSON format.
+- **URL:** `/api/insights`
+- **Method:** `POST`
+- **Environment Variable:** You **must** retrieve your Google Gemini API key from an environment variable named `GEMINI_API_KEY`. Do not hardcode the key.
 
-*   **Success Response (JSON):**
-    ```json
-    {
-      "insights": "- **Total Sales Analysis**: The total sales for the period is **$XX,XXX**. The highest sales were recorded in [Month], and the lowest were in [Month].\n- **Profitability Insights**: The total profit stands at **$XX,XXX**. The most profitable month was [Month]."
-    }
-    ```
+- **Request Body Contract (JSON):**
+  ```json
+  {
+    "data": [
+      { "month": "Jan 2023", "sales": 4000, "profit": 2400 },
+      { "month": "Feb 2023", "sales": 3000, "profit": 1398 },
+      // ... more rows
+    ]
+  }
+  ```
+
+- **Backend Logic (Step-by-Step):**
+    1.  **Receive and Validate:** Accept the JSON payload. Ensure the `data` key exists and is a non-empty list. If not, return a 400 Bad Request error.
+    2.  **Construct a Detailed Prompt:** Create a sophisticated prompt for the Google Gemini API.
+        - **Persona:** "You are an expert data analyst."
+        - **Task:** "Analyze the following JSON data and identify key trends, significant outliers, and actionable business insights."
+        - **Context:** "The data represents [e.g., monthly sales performance, user metrics, etc. - infer from column names]."
+        - **Formatting Rules:** "Your output **must** be a concise, bulleted list formatted in **Markdown**. Use bold (`**`) for emphasis on key metrics and findings. Do not include a title or any introductory text."
+        - **Data:** Convert the incoming JSON data to a clean, stringified format to include in the prompt.
+    3.  **Call Gemini API:** Send the request to the Gemini API using the `google-generativeai` Python library. Implement error handling for the API call (e.g., if the API key is invalid or the service is unavailable).
+    4.  **Format and Return:** Receive the response from Gemini, ensure it's a single string, and return it in a JSON object.
+
+- **Success Response Contract (JSON):**
+  ```json
+  {
+    "insights": "- **Sales Trend**: Sales show a consistent upward trend, peaking in [Month] with **$XX,XXX**.\n- **Profitability Anomaly**: A significant profitability spike occurred in [Month], despite moderate sales, suggesting a high-margin product sale."
+  }
+  ```
+- **Error Response Contract (JSON):**
+  ```json
+  // Status: 500 Internal Server Error
+  { "detail": "Failed to generate insights from AI service." }
+  ```
 
 ---
 
-### Technology Stack
+### Technology & Deliverables
 
-*   **Language:** Python 3.x
-*   **Framework:** Use either **Flask** or **FastAPI**.
-*   **AI Service:** Google Gemini API (using the `google-generativeai` package).
-*   **Dependencies:** Make sure to create a `requirements.txt` file listing all necessary packages.
+1.  **Framework:** You **must** use **FastAPI**.
+2.  **AI Library:** You **must** use `google-generativeai` for interacting with the Gemini API.
+3.  **Dependencies:** Create a `requirements.txt` file listing all necessary packages (e.g., `fastapi`, `uvicorn`, `python-dotenv`, `google-generativeai`).
+4.  **Main File:** The entire application logic should be contained within a single Python file (e.g., `main.py`).
+5.  **CORS:** Configure CORS (Cross-Origin Resource Sharing) to allow requests from the Next.js frontend, which runs on a different port (e.g., `http://localhost:9002`).
 
 ---
 
-### Context from Frontend Code
+### Context from Frontend (For Your Reference Only)
 
-Here are the relevant files from the Next.js frontend to give you context on how the backend will be used.
+You do not need to write any frontend code. The following snippets show how your API will be consumed.
 
-**1. Dashboard Page (`src/app/dashboard/page.tsx`):** This file shows how the API calls are made.
-
+**API Call for Chart Suggestions (`/dashboard/page.tsx`):**
 ```typescript
-// Key functions showing API interaction
-const fetchChartSuggestions = React.useCallback(async (data: any[]) => {
-  // ...
-  const response = await fetch('/api/charts/suggestions', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ data }),
-  });
-  const result: ChartSuggestionResponse = await response.json();
-  setChartSuggestions(result.suggestions);
-  setColumnInfo(result.columnInfo);
-  // ...
-}, [toast]);
-
-// In the AIInsights component, a similar call is made:
-const response = await fetch('/api/insights', {
+const response = await fetch('http://localhost:8000/api/charts/suggestions', { // Note: URL will point to your Python service
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ data }),
 });
+const result = await response.json();
+// result.suggestions -> ['bar', 'line', ...]
+// result.columnInfo -> [{ name: 'sales', type: 'numeric' }, ...]
 ```
 
-**2. Chart Utils (`src/lib/chart-utils.ts`):** This shows the data structures your backend should return.
-
+**Data Structures (`/lib/chart-utils.ts`):**
 ```typescript
 export type ColumnType = 'numeric' | 'date' | 'categorical';
-
 export interface ColumnInfo {
   name: string;
   type: ColumnType;
 }
 ```
 
-**3. Placeholder API Routes:** These are the Next.js files that will be modified to call your Python backend. You don't need to write these, but they show the "bridge" between the frontend and your new Python service.
-
-*   `src/app/api/charts/suggestions/route.ts`
-*   `src/app/api/insights/route.ts`
-
-Your final deliverable should be a complete Python application (e.g., `app.py` or `main.py`) with a `requirements.txt` file, ready to be run as a standalone service.
+Your final deliverable is a complete, runnable FastAPI application with a `requirements.txt` file.
