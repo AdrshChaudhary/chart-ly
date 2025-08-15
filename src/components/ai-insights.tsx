@@ -6,32 +6,45 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/
 import { Button } from './ui/button';
 import { Skeleton } from './ui/skeleton';
 import { BrainCircuit } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface AIInsightsProps {
   data: any[];
 }
 
-const dummyInsight = `
-- **Total Sales Analysis**: The total sales for the period is **$38,750**. The highest sales were recorded in December 2023 ($5,800), and the lowest were in May 2023 ($1,890). There is a clear upward trend in sales towards the end of the year, suggesting strong seasonal performance or business growth.
-- **Profitability Insights**: The total profit stands at **$51,806**. The most profitable month was March 2023 ($9,800), which surprisingly did not have the highest sales, indicating a high-margin transaction. The profit margin is inconsistent across months.
-- **Regional Performance**: The West and South regions are the top performers in terms of both sales and user acquisition. The East region shows potential for growth but currently lags behind.
-- **User Growth**: User count has been steadily increasing, starting from 100 in January and reaching 230 by December, which is a 130% increase over the year.
-`;
-
 export function AIInsights({ data }: AIInsightsProps) {
   const [isLoading, setIsLoading] = React.useState(false);
   const [insights, setInsights] = React.useState<string | null>(null);
+  const { toast } = useToast();
 
-  const handleGenerateInsights = () => {
+  const handleGenerateInsights = async () => {
     setIsLoading(true);
     setInsights(null);
-    // Simulate an API call to an AI service
-    setTimeout(() => {
-      // In a real application, you would make an API call here
-      // with the `data` and get the insights back.
-      setInsights(dummyInsight);
-      setIsLoading(false);
-    }, 2000);
+    try {
+      const response = await fetch('/api/insights', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ data }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate insights.');
+      }
+
+      const result = await response.json();
+      setInsights(result.insights);
+
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: error.message || 'An unexpected error occurred.'
+        })
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -44,7 +57,7 @@ export function AIInsights({ data }: AIInsightsProps) {
             <CardDescription>Click the button to generate an analysis of your data.</CardDescription>
           </div>
         </div>
-        <Button onClick={handleGenerateInsights} disabled={isLoading}>
+        <Button onClick={handleGenerateInsights} disabled={isLoading || data.length === 0}>
           {isLoading ? 'Generating...' : 'Generate Insights'}
         </Button>
       </CardHeader>
