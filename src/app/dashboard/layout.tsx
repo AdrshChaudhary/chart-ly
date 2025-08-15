@@ -3,13 +3,17 @@
 
 import * as React from 'react';
 import Header from '@/components/header';
-import { Sidebar, SidebarProvider, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter, SidebarInset, useSidebar } from '@/components/ui/sidebar';
-import { Settings, PanelsTopLeft, Upload, LogOut, ChevronRight } from 'lucide-react';
+import { Sidebar, SidebarProvider, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
+import { Settings, PanelsTopLeft, Upload, LogOut, History, FileClock } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
 import { signOut } from 'firebase/auth';
-import { Button } from '@/components/ui/button';
+
+type SavedFile = {
+  fileName: string;
+  timestamp: number;
+};
 
 export default function DashboardLayout({
   children,
@@ -19,12 +23,24 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user } = useAuth();
   const router = useRouter();
+  const [savedFiles, setSavedFiles] = React.useState<SavedFile[]>([]);
+
+  React.useEffect(() => {
+    const saved = localStorage.getItem('savedChartlyFiles');
+    if (saved) {
+      setSavedFiles(JSON.parse(saved));
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await signOut(auth);
     document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT;";
     router.push("/login");
   };
+
+  const loadPreviousFile = (fileName: string) => {
+    router.push(`/dashboard?load=${encodeURIComponent(fileName)}`);
+  }
 
   if (!user) {
     // This can be a loading spinner or null
@@ -58,6 +74,28 @@ export default function DashboardLayout({
                     </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
+               {savedFiles.length > 0 && (
+                <div className="px-4 mt-6">
+                  <h3 className="flex items-center gap-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+                    <History className="h-4 w-4" />
+                    History
+                  </h3>
+                  <SidebarMenu>
+                    {savedFiles.map((file) => (
+                       <SidebarMenuItem key={file.fileName}>
+                         <SidebarMenuButton 
+                            href={`/dashboard?load=${encodeURIComponent(file.fileName)}`}
+                            isActive={pathname === `/dashboard?load=${encodeURIComponent(file.fileName)}`}
+                            className="text-sm"
+                          >
+                           <FileClock className="h-4 w-4" />
+                           <span className="truncate">{file.fileName}</span>
+                         </SidebarMenuButton>
+                       </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </div>
+              )}
             </SidebarContent>
             <SidebarFooter>
               <SidebarMenu>

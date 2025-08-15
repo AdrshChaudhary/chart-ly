@@ -52,6 +52,11 @@ type ChartSuggestionResponse = {
   columnInfo: ColumnInfo[];
 };
 
+type SavedFile = {
+  fileName: string;
+  timestamp: number;
+};
+
 function KpiCard({ title, value, icon: Icon, description }: KpiCardProps) {
     return (
         <Card>
@@ -109,16 +114,51 @@ export default function DashboardPage() {
       setIsLoadingCharts(false);
     }
   }, [toast]);
+  
+  const processData = React.useCallback((data: ParsedData, name: string) => {
+    setParsedData(data);
+    setFilteredData(data.data);
+    setFileName(name);
+    fetchChartSuggestions(data.data);
+    setFilters({});
+  }, [fetchChartSuggestions]);
+
+  const saveFileToHistory = React.useCallback((fileName: string, parsedData: ParsedData) => {
+      try {
+        localStorage.setItem(`chartly-file-${fileName}`, JSON.stringify(parsedData));
+
+        const savedFilesString = localStorage.getItem('savedChartlyFiles');
+        let savedFiles: SavedFile[] = savedFilesString ? JSON.parse(savedFilesString) : [];
+        
+        savedFiles = savedFiles.filter(f => f.fileName !== fileName);
+        savedFiles.unshift({ fileName, timestamp: Date.now() });
+        savedFiles = savedFiles.slice(0, 5); // Limit history to 5 files
+
+        localStorage.setItem('savedChartlyFiles', JSON.stringify(savedFiles));
+
+        // This is a bit of a hack to force the layout to re-render and show the new history
+        window.dispatchEvent(new Event('storage'));
+
+      } catch (e) {
+          console.error("Could not save file to local storage", e);
+          toast({
+            variant: "destructive",
+            title: "Could not save to history",
+            description: "Your browser's local storage might be full."
+          })
+      }
+  }, [toast]);
+
 
   React.useEffect(() => {
-    const data = searchParams.get('data');
-    if (data) {
+    const dataParam = searchParams.get('data');
+    const loadParam = searchParams.get('load');
+
+    if (dataParam) {
         try {
-            const decodedData = JSON.parse(decodeURIComponent(data));
-            setParsedData(decodedData.parsedData);
-            setFilteredData(decodedData.parsedData.data);
-            setFileName(decodedData.fileName);
-            fetchChartSuggestions(decodedData.parsedData.data);
+            const decodedData = JSON.parse(decodeURIComponent(dataParam));
+            processData(decodedData.parsedData, decodedData.fileName);
+            saveFileToHistory(decodedData.fileName, decodedData.parsedData);
             toast({
                 title: "File processed successfully!",
                 description: `Showing dashboard for ${decodedData.fileName}`
@@ -132,16 +172,38 @@ export default function DashboardPage() {
                 description: 'Could not load data from the previous page.'
             });
         }
+    } else if (loadParam) {
+        try {
+          const fileName = decodeURIComponent(loadParam);
+          const fileData = localStorage.getItem(`chartly-file-${fileName}`);
+          if (fileData) {
+            const parsedData = JSON.parse(fileData);
+            processData(parsedData, fileName);
+             toast({
+                title: "Loaded from history",
+                description: `Showing dashboard for ${fileName}`
+            });
+          } else {
+             toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not find the specified file in your history.'
+            });
+          }
+          router.replace('/dashboard', { scroll: false });
+        } catch(e) {
+          console.error("Failed to load from history", e)
+           toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Could not load the data from your history.'
+            });
+        }
     }
-  }, [searchParams, router, toast, fetchChartSuggestions]);
+  }, [searchParams, router, toast, fetchChartSuggestions, processData, saveFileToHistory]);
 
   const handleDummyData = () => {
-    const detectedColumns = detectColumnTypes(dummyData.data);
-    setParsedData(dummyData);
-    setFilteredData(dummyData.data);
-    setColumnInfo(detectedColumns);
-    setFileName('dummy-data.json');
-    fetchChartSuggestions(dummyData.data);
+    processData(dummyData, 'dummy-data.json');
     toast({
         title: "Dummy data loaded",
         description: "Showing charts for dummy-data.json"
@@ -171,6 +233,7 @@ export default function DashboardPage() {
     setFilters({});
     setChartSuggestions([]);
     setColumnInfo([]);
+    router.replace('/dashboard', { scroll: false });
   };
 
   const kpiMetrics = React.useMemo(() => {
