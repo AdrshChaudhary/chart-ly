@@ -6,6 +6,7 @@ import { FileUploader } from '@/components/file-uploader';
 import { ChartGrid } from '@/components/chart-grid';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export type ParsedData = {
   data: any[];
@@ -19,14 +20,21 @@ export default function UploadPage() {
   const [error, setError] = React.useState<string | null>(null);
   const [fileName, setFileName] = React.useState<string>('');
   const router = useRouter();
+  const { toast } = useToast();
 
 
   const handleDataParsed = (data: ParsedData, file: File) => {
     // In a real app, you'd likely pass this data to the main dashboard page
     // For now, we can just show the chart grid here as a preview
+    localStorage.setItem('parsedData', JSON.stringify(data));
+    localStorage.setItem('fileName', file.name);
     setParsedData(data);
     setFileName(file.name);
     setError(null);
+    toast({
+        title: "File uploaded successfully!",
+        description: `Showing charts for ${file.name}`
+    })
     
     // For demonstration, let's redirect to the dashboard after a "successful" upload
     // You would typically handle state differently (e.g. global state, query params)
@@ -43,8 +51,22 @@ export default function UploadPage() {
     setParsedData(null);
     setFileName('');
     setError(null);
+    localStorage.removeItem('parsedData');
+    localStorage.removeItem('fileName');
   };
   
+  const handleGoToDashboard = () => {
+    if (parsedData) {
+        router.push('/dashboard');
+    } else {
+        toast({
+            variant: "destructive",
+            title: "No data uploaded",
+            description: "Please upload a file first."
+        })
+    }
+  }
+
   return (
     <main className="flex-grow p-4 md:p-8">
         {!parsedData ? (
@@ -72,7 +94,7 @@ export default function UploadPage() {
               </div>
               <div className="flex gap-2">
                  <Button onClick={handleReset} variant="outline">Upload Another File</Button>
-                 <Button onClick={() => router.push('/dashboard')}>Go to Dashboard</Button>
+                 <Button onClick={handleGoToDashboard}>Go to Dashboard</Button>
               </div>
             </div>
             <ChartGrid data={parsedData.data} />
