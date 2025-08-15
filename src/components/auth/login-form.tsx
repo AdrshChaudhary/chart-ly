@@ -1,3 +1,4 @@
+
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -57,7 +58,7 @@ export function LoginForm() {
         title: "Success!",
         description: "You have successfully signed in.",
       });
-      router.push('/');
+      router.push('/dashboard');
       router.refresh();
     } catch (error: any) {
       toast({

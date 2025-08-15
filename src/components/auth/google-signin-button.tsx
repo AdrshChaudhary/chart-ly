@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -38,7 +39,7 @@ export function GoogleSignInButton() {
         title: "Success!",
         description: `Welcome ${additionalInfo?.isNewUser ? '' : 'back, '}${user.displayName || 'User'}!`,
       });
-      router.push('/');
+      router.push('/dashboard');
       router.refresh();
     } catch (error: any) {
       toast({
