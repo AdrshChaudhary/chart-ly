@@ -3,17 +3,20 @@
 
 import * as React from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { detectColumnTypes, getChartSuggestions, ColumnInfo } from '@/lib/chart-utils';
+import type { ColumnInfo } from '@/lib/chart-utils';
 import LineChartComponent from './charts/line-chart';
 import BarChartComponent from './charts/bar-chart';
 import PieChartComponent from './charts/pie-chart';
 import ScatterChartComponent from './charts/scatter-chart';
 import RadarChartComponent from './charts/radar-chart';
-import { AreaChart } from 'lucide-react';
 import AreaChartComponent from './charts/area-chart';
+import { Skeleton } from './ui/skeleton';
 
 interface ChartGridProps {
   data: any[];
+  suggestions: ('line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area')[];
+  columnInfo: ColumnInfo[];
+  isLoading: boolean;
 }
 
 const NoChartsAvailable = () => (
@@ -28,20 +31,31 @@ const NoChartsAvailable = () => (
     </Card>
 )
 
-export function ChartGrid({ data }: ChartGridProps) {
-  const { suggestions, columnInfo } = React.useMemo(() => {
-    if (!data || data.length === 0) {
-      return { suggestions: [], columnInfo: [] };
-    }
-    const detectedColumns = detectColumnTypes(data);
-    return {
-      suggestions: getChartSuggestions(detectedColumns),
-      columnInfo: detectedColumns
-    };
-  }, [data]);
+const LoadingSkeleton = () => (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+            <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
+            <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+        </Card>
+        <Card>
+            <CardHeader><Skeleton className="h-6 w-1/2" /></CardHeader>
+            <CardContent><Skeleton className="h-[300px] w-full" /></CardContent>
+        </Card>
+    </div>
+)
 
-  if (suggestions.length === 0) {
+export function ChartGrid({ data, suggestions, columnInfo, isLoading }: ChartGridProps) {
+
+  if (isLoading) {
+    return <LoadingSkeleton />;
+  }
+  
+  if (data.length > 0 && suggestions.length === 0 && !isLoading) {
     return <NoChartsAvailable />;
+  }
+  
+  if (suggestions.length === 0) {
+    return null;
   }
 
   return (

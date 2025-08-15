@@ -56,35 +56,6 @@ export function detectColumnTypes(data: any[]): ColumnInfo[] {
   });
 }
 
-export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area')[] {
-  const suggestions = new Set<'line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area'>();
-  
-  const numericCols = columns.filter(c => c.type === 'numeric');
-  const dateCols = columns.filter(c => c.type === 'date').length;
-  const categoricalCols = columns.filter(c => c.type === 'categorical').length;
-
-  if (numericCols.length >= 1) {
-    if (dateCols >= 1 || categoricalCols >=1) {
-      suggestions.add('line');
-      suggestions.add('area');
-    }
-    if (categoricalCols >= 1) {
-      suggestions.add('bar');
-      suggestions.add('pie');
-    }
-  }
-
-  if (numericCols.length >= 2) {
-      suggestions.add('scatter');
-  }
-
-  if (categoricalCols >= 1 && numericCols.length >= 2) {
-      suggestions.add('radar');
-  }
-  
-  return Array.from(suggestions);
-}
-
 export const findKey = (columns: ColumnInfo[], type: ColumnType): string | undefined => {
     const column = columns.find(c => c.type === type);
     return column?.name;

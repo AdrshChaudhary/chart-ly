@@ -47,6 +47,11 @@ type KpiCardProps = {
     description?: string;
 }
 
+type ChartSuggestionResponse = {
+  suggestions: ('line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area')[];
+  columnInfo: ColumnInfo[];
+};
+
 function KpiCard({ title, value, icon: Icon, description }: KpiCardProps) {
     return (
         <Card>
@@ -66,23 +71,54 @@ export default function DashboardPage() {
   const [parsedData, setParsedData] = React.useState<ParsedData | null>(null);
   const [filteredData, setFilteredData] = React.useState<any[] | null>(null);
   const [columnInfo, setColumnInfo] = React.useState<ColumnInfo[]>([]);
+  const [chartSuggestions, setChartSuggestions] = React.useState<ChartSuggestionResponse['suggestions']>([]);
   const [fileName, setFileName] = React.useState<string>('');
   const [filters, setFilters] = React.useState<Record<string, string>>({});
+  const [isLoadingCharts, setIsLoadingCharts] = React.useState(false);
 
   const { toast } = useToast();
   const router = useRouter();
   const searchParams = useSearchParams();
+
+  const fetchChartSuggestions = React.useCallback(async (data: any[]) => {
+    if (data.length === 0) {
+      setChartSuggestions([]);
+      setColumnInfo([]);
+      return;
+    }
+    setIsLoadingCharts(true);
+    try {
+      const response = await fetch('/api/charts/suggestions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data }),
+      });
+      if (!response.ok) throw new Error('Failed to get chart suggestions.');
+      const result: ChartSuggestionResponse = await response.json();
+      setChartSuggestions(result.suggestions);
+      setColumnInfo(result.columnInfo);
+    } catch (error: any) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: error.message || 'Could not load chart suggestions.',
+      });
+      setChartSuggestions([]);
+      setColumnInfo([]);
+    } finally {
+      setIsLoadingCharts(false);
+    }
+  }, [toast]);
 
   React.useEffect(() => {
     const data = searchParams.get('data');
     if (data) {
         try {
             const decodedData = JSON.parse(decodeURIComponent(data));
-            const detectedColumns = detectColumnTypes(decodedData.parsedData.data);
             setParsedData(decodedData.parsedData);
             setFilteredData(decodedData.parsedData.data);
-            setColumnInfo(detectedColumns);
             setFileName(decodedData.fileName);
+            fetchChartSuggestions(decodedData.parsedData.data);
             toast({
                 title: "File processed successfully!",
                 description: `Showing dashboard for ${decodedData.fileName}`
@@ -97,7 +133,7 @@ export default function DashboardPage() {
             });
         }
     }
-  }, [searchParams, router, toast]);
+  }, [searchParams, router, toast, fetchChartSuggestions]);
 
   const handleDummyData = () => {
     const detectedColumns = detectColumnTypes(dummyData.data);
@@ -105,6 +141,7 @@ export default function DashboardPage() {
     setFilteredData(dummyData.data);
     setColumnInfo(detectedColumns);
     setFileName('dummy-data.json');
+    fetchChartSuggestions(dummyData.data);
     toast({
         title: "Dummy data loaded",
         description: "Showing charts for dummy-data.json"
@@ -124,6 +161,7 @@ export default function DashboardPage() {
     });
 
     setFilteredData(dataToFilter);
+    fetchChartSuggestions(dataToFilter);
   };
   
   const handleReset = () => {
@@ -131,6 +169,8 @@ export default function DashboardPage() {
     setFilteredData(null);
     setFileName('');
     setFilters({});
+    setChartSuggestions([]);
+    setColumnInfo([]);
   };
 
   const kpiMetrics = React.useMemo(() => {
@@ -244,7 +284,12 @@ export default function DashboardPage() {
           
           <AIInsights data={filteredData || []} />
 
-          <ChartGrid data={filteredData || []} />
+          <ChartGrid 
+            data={filteredData || []} 
+            suggestions={chartSuggestions}
+            columnInfo={columnInfo}
+            isLoading={isLoadingCharts}
+          />
         </div>
       )}
     </>
