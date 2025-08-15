@@ -106,86 +106,17 @@ Your backend is now ready to run.
 
 ---
 
-## Step 7: Connect the Frontend to Your Live Backend
+## Step 7: Test the Full Application
 
-The final step is to tell the Next.js frontend to send requests to your running Python server instead of its local mock APIs.
+The Next.js frontend has already been configured to communicate with your Python backend. No further code changes are needed in the frontend.
 
-1.  Navigate back to your Next.js project (`chartly-next-frontend`).
-2.  Open the file at `src/app/api/charts/suggestions/route.ts`.
-3.  **Replace the entire content** of this file with the following code. This code forwards the request to your Python backend.
+1.  Ensure both your Next.js development server (`npm run dev`) and your Python `uvicorn` server are running at the same time.
+2.  Open your Chartly application in the browser (usually at `http://localhost:9002`).
+3.  Upload a data file.
 
-    ```typescript
-    import { NextResponse } from 'next/server';
+If everything is set up correctly, the frontend will make live API calls to your running Python backend for both chart suggestions and AI insights.
 
-    export async function POST(request: Request) {
-      try {
-        const body = await request.json();
-        const pythonBackendUrl = 'http://127.0.0.1:8000/api/charts/suggestions';
-
-        const response = await fetch(pythonBackendUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(`Backend error: ${response.status} ${errorData}`);
-        }
-
-        const data = await response.json();
-        return NextResponse.json(data);
-
-      } catch (error: any) {
-        console.error('Failed to forward request to Python backend:', error);
-        return NextResponse.json(
-          { error: 'Failed to process chart suggestions.', details: error.message },
-          { status: 500 }
-        );
-      }
-    }
-    ```
-
-4.  Now, open the file at `src/app/api/insights/route.ts`.
-5.  **Replace its content** with this code to forward insight requests:
-
-    ```typescript
-    import { NextResponse } from 'next/server';
-
-    export async function POST(request: Request) {
-      try {
-        const body = await request.json();
-        const pythonBackendUrl = 'http://127.0.0.1:8000/api/insights';
-
-        const response = await fetch(pythonBackendUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
-          },
-          body: JSON.stringify(body),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.text();
-          throw new Error(`Backend error: ${response.status} ${errorData}`);
-        }
-        
-        const data = await response.json();
-        return NextResponse.json(data);
-
-      } catch (error: any) {
-        console.error('Failed to forward request to Python backend:', error);
-        return NextResponse.json(
-          { error: 'Failed to generate AI insights.', details: error.message },
-          { status: 500 }
-        );
-      }
-    }
-    ```
+---
 
 ## You're All Set!
 
