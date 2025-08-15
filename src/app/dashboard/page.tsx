@@ -5,11 +5,11 @@ import * as React from 'react';
 import { ChartGrid } from '@/components/chart-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Upload, BarChart, TrendingUp, Users, Wallet } from 'lucide-react';
+import { Upload, BarChart, TrendingUp, Users, Wallet, Share2, Download } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { detectColumnTypes, ColumnInfo } from '@/lib/chart-utils';
+import { ColumnInfo } from '@/lib/chart-utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AIInsights } from '@/components/ai-insights';
 
@@ -136,7 +136,7 @@ export default function DashboardPage() {
 
         localStorage.setItem('savedChartlyFiles', JSON.stringify(savedFiles));
 
-        // This is a bit of a hack to force the layout to re-render and show the new history
+        // This event will notify the layout to update the history
         window.dispatchEvent(new Event('storage'));
 
       } catch (e) {
@@ -204,6 +204,7 @@ export default function DashboardPage() {
 
   const handleDummyData = () => {
     processData(dummyData, 'dummy-data.json');
+    saveFileToHistory('dummy-data.json', dummyData);
     toast({
         title: "Dummy data loaded",
         description: "Showing charts for dummy-data.json"
@@ -234,6 +235,20 @@ export default function DashboardPage() {
     setChartSuggestions([]);
     setColumnInfo([]);
     router.replace('/dashboard', { scroll: false });
+  };
+  
+  const handleShare = () => {
+    toast({
+      title: "Share Dashboard",
+      description: "This feature is not yet implemented.",
+    });
+  };
+  
+  const handleExport = () => {
+     toast({
+      title: "Export Dashboard",
+      description: "This feature is not yet implemented.",
+    });
   };
 
   const kpiMetrics = React.useMemo(() => {
@@ -309,11 +324,17 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
               <p className="text-muted-foreground">Showing visualizations for {fileName}</p>
             </div>
-            <div className="flex gap-2">
-              <Button onClick={handleReset} variant="outline">Clear Data</Button>
-              <Button asChild>
-                <Link href="/dashboard/upload">Upload New File</Link>
-              </Button>
+             <div className="flex flex-wrap gap-2">
+                <Button variant="outline" onClick={handleShare}>
+                    <Share2 className="mr-2 h-4 w-4" /> Share
+                </Button>
+                <Button variant="outline" onClick={handleExport}>
+                    <Download className="mr-2 h-4 w-4" /> Export
+                </Button>
+                <Button onClick={handleReset} variant="outline">Clear Data</Button>
+                <Button asChild>
+                    <Link href="/dashboard/upload">Upload New File</Link>
+                </Button>
             </div>
           </div>
           

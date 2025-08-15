@@ -4,7 +4,7 @@
 import * as React from 'react';
 import Header from '@/components/header';
 import { Sidebar, SidebarProvider, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarFooter } from '@/components/ui/sidebar';
-import { Settings, PanelsTopLeft, Upload, LogOut, History, FileClock } from 'lucide-react';
+import { PanelsTopLeft, Upload, LogOut, History, FileClock } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/use-auth';
 import { auth } from '@/lib/firebase';
@@ -25,12 +25,22 @@ export default function DashboardLayout({
   const router = useRouter();
   const [savedFiles, setSavedFiles] = React.useState<SavedFile[]>([]);
 
-  React.useEffect(() => {
+  const updateHistory = React.useCallback(() => {
     const saved = localStorage.getItem('savedChartlyFiles');
     if (saved) {
       setSavedFiles(JSON.parse(saved));
+    } else {
+      setSavedFiles([]);
     }
   }, []);
+
+  React.useEffect(() => {
+    updateHistory();
+    window.addEventListener('storage', updateHistory);
+    return () => {
+      window.removeEventListener('storage', updateHistory);
+    };
+  }, [updateHistory]);
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -66,12 +76,6 @@ export default function DashboardLayout({
                     <Upload />
                     <span>Upload Data</span>
                   </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton href="#">
-                        <Settings />
-                        <span>Settings</span>
-                    </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
                {savedFiles.length > 0 && (
