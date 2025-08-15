@@ -19,7 +19,7 @@ export const isDate = (val: any): boolean => {
   if (typeof val === 'string' || typeof val === 'number') {
     // Check for YYYY-MM-DD or other common date formats, and that it's a valid date
     const date = new Date(val);
-    return !isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(val.toString());
+    return !isNaN(date.getTime()) && (/\d{4}-\d{2}-\d{2}/.test(val.toString()) || date.toString() !== 'Invalid Date' && val.toString().length > 4);
   }
   return false;
 };
@@ -34,24 +34,30 @@ export function detectColumnTypes(data: any[]): ColumnInfo[] {
   return fields.map(field => {
     let numericCount = 0;
     let dateCount = 0;
+    let nonNullCount = 0;
     
     for (const row of samples) {
         const value = row[field];
         if (value === null || value === undefined || value === '') continue;
+        nonNullCount++;
         if (isNumeric(value)) numericCount++;
         if (isDate(value)) dateCount++;
     }
     
+    if (nonNullCount === 0) {
+      return { name: field, type: 'categorical' };
+    }
+
     // Heuristics to determine type
-    if (dateCount / sampleSize > 0.8) return { name: field, type: 'date' };
-    if (numericCount / sampleSize > 0.8) return { name: field, type: 'numeric' };
+    if (dateCount / nonNullCount > 0.8) return { name: field, type: 'date' };
+    if (numericCount / nonNullCount > 0.8) return { name: field, type: 'numeric' };
 
     return { name: field, type: 'categorical' };
   });
 }
 
-export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'pie' | 'scatter' | 'radar')[] {
-  const suggestions = new Set<'line' | 'bar' | 'pie' | 'scatter' | 'radar'>();
+export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area')[] {
+  const suggestions = new Set<'line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area'>();
   
   const numericCols = columns.filter(c => c.type === 'numeric');
   const dateCols = columns.filter(c => c.type === 'date').length;
@@ -60,6 +66,7 @@ export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'p
   if (numericCols.length >= 1) {
     if (dateCols >= 1 || categoricalCols >=1) {
       suggestions.add('line');
+      suggestions.add('area');
     }
     if (categoricalCols >= 1) {
       suggestions.add('bar');
