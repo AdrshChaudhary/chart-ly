@@ -14,6 +14,21 @@ export type ParsedData = {
   };
 };
 
+const dummyData = {
+    data: [
+      { month: 'January', sales: 4000, profit: 2400 },
+      { month: 'February', sales: 3000, profit: 1398 },
+      { month: 'March', sales: 2000, profit: 9800 },
+      { month: 'April', sales: 2780, profit: 3908 },
+      { month: 'May', sales: 1890, profit: 4800 },
+      { month: 'June', sales: 2390, profit: 3800 },
+      { month: 'July', sales: 3490, profit: 4300 },
+    ],
+    meta: {
+        fields: ['month', 'sales', 'profit']
+    }
+}
+
 export default function DashboardPage() {
   const [parsedData, setParsedData] = React.useState<ParsedData | null>(null);
   const [error, setError] = React.useState<string | null>(null);
@@ -37,6 +52,12 @@ export default function DashboardPage() {
     setError(null);
   };
 
+  const generateDummyData = () => {
+    setParsedData(dummyData);
+    setFileName('dummy-data.json');
+    setError(null);
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
@@ -47,13 +68,17 @@ export default function DashboardPage() {
               Create Charts Instantly
             </h1>
             <p className="text-center text-muted-foreground mb-8">
-              Upload a CSV, XLSX, or JSON file to get started.
+              Upload a CSV, XLSX, or JSON file to get started, or generate sample charts.
             </p>
             <FileUploader
               onDataParsed={handleDataParsed}
               onError={handleParsingError}
             />
             {error && <p className="text-destructive text-center mt-4">{error}</p>}
+
+            <div className="mt-8 text-center">
+                <Button onClick={generateDummyData}>Generate Dummy Charts</Button>
+            </div>
           </div>
         ) : (
           <div>
