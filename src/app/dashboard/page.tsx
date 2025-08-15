@@ -16,16 +16,16 @@ export type ParsedData = {
 
 const dummyData = {
     data: [
-      { month: 'January', sales: 4000, profit: 2400 },
-      { month: 'February', sales: 3000, profit: 1398 },
-      { month: 'March', sales: 2000, profit: 9800 },
-      { month: 'April', sales: 2780, profit: 3908 },
-      { month: 'May', sales: 1890, profit: 4800 },
-      { month: 'June', sales: 2390, profit: 3800 },
-      { month: 'July', sales: 3490, profit: 4300 },
+      { month: '2023-01-01', sales: 4000, profit: 2400, expenses: 2200 },
+      { month: '2023-02-01', sales: 3000, profit: 1398, expenses: 2000 },
+      { month: '2023-03-01', sales: 5000, profit: 9800, expenses: 2500 },
+      { month: '2023-04-01', sales: 2780, profit: 3908, expenses: 2100 },
+      { month: '2023-05-01', sales: 1890, profit: 4800, expenses: 1500 },
+      { month: '2023-06-01', sales: 2390, profit: 3800, expenses: 1800 },
+      { month: '2023-07-01', sales: 3490, profit: 4300, expenses: 2300 },
     ],
     meta: {
-        fields: ['month', 'sales', 'profit']
+        fields: ['month', 'sales', 'profit', 'expenses']
     }
 }
 

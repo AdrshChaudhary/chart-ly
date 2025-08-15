@@ -1,3 +1,4 @@
+
 export type ColumnType = 'numeric' | 'date' | 'categorical';
 
 export interface ColumnInfo {
@@ -11,11 +12,12 @@ const isNumeric = (val: any): boolean => {
   return false;
 };
 
-const isDate = (val: any): boolean => {
+export const isDate = (val: any): boolean => {
   if (val instanceof Date) return true;
   if (typeof val === 'string' || typeof val === 'number') {
+    // Check for YYYY-MM-DD or other common date formats, and that it's a valid date
     const date = new Date(val);
-    return !isNaN(date.getTime());
+    return !isNaN(date.getTime()) && /^\d{4}-\d{2}-\d{2}/.test(val.toString());
   }
   return false;
 };
@@ -28,23 +30,23 @@ export function detectColumnTypes(data: any[]): ColumnInfo[] {
   const samples = data.slice(0, sampleSize);
 
   return fields.map(field => {
-    let isAlwaysNumeric = true;
-    let isAlwaysDate = true;
+    let isConsistentlyDate = true;
+    let isConsistentlyNumeric = true;
 
     for (const row of samples) {
         const value = row[field];
         if (value === null || value === undefined || value === '') continue;
 
-        if (isAlwaysNumeric && !isNumeric(value)) {
-            isAlwaysNumeric = false;
+        if (isConsistentlyDate && !isDate(value)) {
+            isConsistentlyDate = false;
         }
-        if (isAlwaysDate && !isDate(value)) {
-            isAlwaysDate = false;
+        if (isConsistentlyNumeric && !isNumeric(value)) {
+            isConsistentlyNumeric = false;
         }
     }
 
-    if (isAlwaysNumeric) return { name: field, type: 'numeric' };
-    if (isAlwaysDate) return { name: field, type: 'date' };
+    if (isConsistentlyDate) return { name: field, type: 'date' };
+    if (isConsistentlyNumeric) return { name: field, type: 'numeric' };
     return { name: field, type: 'categorical' };
   });
 }
@@ -57,7 +59,7 @@ export function getChartSuggestions(columns: ColumnInfo[]): ('line' | 'bar' | 'p
   const categoricalCols = columns.filter(c => c.type === 'categorical').length;
 
   if (numericCols.length >= 1) {
-    if (dateCols >= 1) {
+    if (dateCols >= 1 || categoricalCols >=1) {
       suggestions.add('line');
     }
     if (categoricalCols >= 1) {

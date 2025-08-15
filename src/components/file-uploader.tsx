@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from 'react';
@@ -7,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { UploadCloud, FileJson, FileSpreadsheet, FileText, Loader2 } from 'lucide-react';
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import type { ParsedData } from '@/app/page';
+import type { ParsedData } from '@/app/dashboard/page';
 
 interface FileUploaderProps {
   onDataParsed: (data: ParsedData, file: File) => void;

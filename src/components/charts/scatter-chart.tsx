@@ -1,3 +1,4 @@
+
 "use client"
 
 import { Scatter, ScatterChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
@@ -31,7 +32,7 @@ export default function ScatterChartComponent({ data, columnInfo }: ChartProps) 
                         fontSize={12} 
                         tickLine={false} 
                         axisLine={true}
-                        label={{ value: xAxisKey, position: 'bottom', offset: 0, fill: "hsl(var(--muted-foreground))" }}
+                        label={{ value: xAxisKey, position: 'insideBottom', offset: -10, fill: "hsl(var(--muted-foreground))" }}
                     />
                     <YAxis 
                         type="number" 

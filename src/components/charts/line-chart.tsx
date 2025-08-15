@@ -1,8 +1,9 @@
+
 "use client"
 
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import type { ColumnInfo } from '@/lib/chart-utils';
-import { findKey } from '@/lib/chart-utils';
+import { findKey, isDate } from '@/lib/chart-utils';
 
 interface ChartProps {
     data: any[];
@@ -10,24 +11,29 @@ interface ChartProps {
 }
 
 export default function LineChartComponent({ data, columnInfo }: ChartProps) {
-    const categoryKey = findKey(columnInfo, 'date') || findKey(columnInfo, 'categorical');
+    const dateKey = findKey(columnInfo, 'date');
+    const categoryKey = findKey(columnInfo, 'categorical');
+    const xAxisKey = dateKey || categoryKey;
     const valueKey = findKey(columnInfo, 'numeric');
 
-    if (!categoryKey || !valueKey) {
+    if (!xAxisKey || !valueKey) {
         return <div className="text-center text-muted-foreground p-4">Line chart requires a date/text column and a numeric column.</div>;
     }
 
-    const formattedData = data.map(item => ({
-        ...item,
-        [categoryKey]: new Date(item[categoryKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-    }));
+    const formattedData = data.map(item => {
+        const newItem = {...item};
+        if (dateKey && isDate(newItem[dateKey])) {
+            newItem[dateKey] = new Date(item[dateKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        }
+        return newItem;
+    });
 
     return (
         <div style={{ width: '100%', height: 300 }}>
             <ResponsiveContainer>
                 <LineChart data={formattedData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-                    <XAxis dataKey={categoryKey} stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                    <XAxis dataKey={xAxisKey} stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                     <Tooltip
                         contentStyle={{
