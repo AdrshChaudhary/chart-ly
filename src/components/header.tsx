@@ -16,7 +16,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "./ui/button";
-import { ChartLine, LogOut, LayoutDashboard } from "lucide-react";
+import { ChartLine, LogOut } from "lucide-react";
+import { SidebarTrigger } from "./ui/sidebar";
+
 
 export default function Header() {
   const { user } = useAuth();
@@ -41,28 +43,29 @@ export default function Header() {
   const isDashboard = pathname.startsWith('/dashboard');
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-card">
+    <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm">
       <div className="container flex h-16 items-center">
-        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary">
+        {isDashboard && user && <SidebarTrigger />}
+        <Link href="/" className="flex items-center gap-2 font-bold text-lg text-primary mr-4">
           <ChartLine className="h-6 w-6" />
           <span>Chartly</span>
         </Link>
+        
+        {isDashboard && user && (
+            <nav className="hidden md:flex items-center space-x-2">
+                <Button variant={pathname === '/dashboard' ? 'secondary' : 'ghost'} size="sm" asChild>
+                    <Link href="/dashboard">Overview</Link>
+                </Button>
+                <Button variant={pathname === '/dashboard/upload' ? 'secondary' : 'ghost'} size="sm" asChild>
+                    <Link href="/dashboard/upload">Upload Data</Link>
+                </Button>
+            </nav>
+        )}
+
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
             {user ? (
                <div className="flex items-center gap-4">
-                {isDashboard ? (
-                    <Button variant="ghost" size="sm" asChild>
-                       <Link href="/">Home</Link>
-                    </Button>
-                ) : (
-                    <Button variant="ghost" size="sm" asChild>
-                       <Link href="/dashboard">
-                          <LayoutDashboard className="mr-2 h-4 w-4"/>
-                          Dashboard
-                        </Link>
-                    </Button>
-                )}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-9 w-9 rounded-full">

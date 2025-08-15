@@ -7,12 +7,14 @@ export interface ColumnInfo {
 }
 
 const isNumeric = (val: any): boolean => {
+  if (val === null || val === undefined || val === '') return false;
   if (typeof val === 'number' && isFinite(val)) return true;
   if (typeof val === 'string' && val.trim() !== '' && !isNaN(Number(val))) return true;
   return false;
 };
 
 export const isDate = (val: any): boolean => {
+  if (val === null || val === undefined || val === '') return false;
   if (val instanceof Date) return true;
   if (typeof val === 'string' || typeof val === 'number') {
     // Check for YYYY-MM-DD or other common date formats, and that it's a valid date
@@ -26,27 +28,24 @@ export function detectColumnTypes(data: any[]): ColumnInfo[] {
   if (!data || data.length === 0) return [];
 
   const fields = Object.keys(data[0]);
-  const sampleSize = Math.min(data.length, 10);
+  const sampleSize = Math.min(data.length, 20); // Increased sample size
   const samples = data.slice(0, sampleSize);
 
   return fields.map(field => {
-    let isConsistentlyDate = true;
-    let isConsistentlyNumeric = true;
-
+    let numericCount = 0;
+    let dateCount = 0;
+    
     for (const row of samples) {
         const value = row[field];
         if (value === null || value === undefined || value === '') continue;
-
-        if (isConsistentlyDate && !isDate(value)) {
-            isConsistentlyDate = false;
-        }
-        if (isConsistentlyNumeric && !isNumeric(value)) {
-            isConsistentlyNumeric = false;
-        }
+        if (isNumeric(value)) numericCount++;
+        if (isDate(value)) dateCount++;
     }
+    
+    // Heuristics to determine type
+    if (dateCount / sampleSize > 0.8) return { name: field, type: 'date' };
+    if (numericCount / sampleSize > 0.8) return { name: field, type: 'numeric' };
 
-    if (isConsistentlyDate) return { name: field, type: 'date' };
-    if (isConsistentlyNumeric) return { name: field, type: 'numeric' };
     return { name: field, type: 'categorical' };
   });
 }

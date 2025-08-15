@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,7 +9,7 @@ body {
 
 @layer base {
   :root {
-    --background: 210 25% 96.1%;
+    --background: 210 25% 98%;
     --foreground: 222.2 84% 4.9%;
     --card: 210 25% 100%;
     --card-foreground: 222.2 84% 4.9%;
@@ -33,7 +34,7 @@ body {
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
+    --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
