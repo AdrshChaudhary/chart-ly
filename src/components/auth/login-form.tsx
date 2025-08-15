@@ -59,6 +59,7 @@ export function LoginForm() {
         description: "You have successfully signed in.",
       });
       router.push('/dashboard');
+      router.refresh();
     } catch (error: any) {
       toast({
         variant: "destructive",

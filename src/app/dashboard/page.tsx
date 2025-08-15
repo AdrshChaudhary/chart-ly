@@ -40,8 +40,16 @@ export default function DashboardPage() {
     const storedData = localStorage.getItem('parsedData');
     const storedFileName = localStorage.getItem('fileName');
     if (storedData) {
-      setParsedData(JSON.parse(storedData));
-      setFileName(storedFileName || '');
+      try {
+        setParsedData(JSON.parse(storedData));
+        if (storedFileName) {
+          setFileName(storedFileName);
+        }
+      } catch (error) {
+        console.error("Failed to parse data from localStorage", error);
+        localStorage.removeItem('parsedData');
+        localStorage.removeItem('fileName');
+      }
     }
   }, []);
 
