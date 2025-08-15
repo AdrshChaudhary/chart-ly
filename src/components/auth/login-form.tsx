@@ -35,7 +35,21 @@ export function LoginForm() {
     setIsLoading(true);
     try {
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
-      const idToken = await userCredential.user.getIdToken();
+      const user = userCredential.user;
+
+      if (!user.emailVerified) {
+        toast({
+          variant: "destructive",
+          title: "Email not verified",
+          description: "Please verify your email before logging in. A new verification email has been sent.",
+        });
+        // Optionally, resend verification email
+        // await sendEmailVerification(user);
+        setIsLoading(false);
+        return;
+      }
+
+      const idToken = await user.getIdToken();
 
       // Set cookie
       document.cookie = `token=${idToken}; path=/; max-age=86400;`; // 1 day expiry

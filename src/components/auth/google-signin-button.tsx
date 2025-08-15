@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -28,13 +28,15 @@ export function GoogleSignInButton() {
     const provider = new GoogleAuthProvider();
     try {
       const result = await signInWithPopup(auth, provider);
-      const idToken = await result.user.getIdToken();
+      const user = result.user;
+      const additionalInfo = getAdditionalUserInfo(result);
+      const idToken = await user.getIdToken();
 
       document.cookie = `token=${idToken}; path=/; max-age=86400;`;
 
       toast({
         title: "Success!",
-        description: "You have successfully signed in with Google.",
+        description: `Welcome ${additionalInfo?.isNewUser ? '' : 'back, '}${user.displayName || 'User'}!`,
       });
       router.push('/');
       router.refresh();

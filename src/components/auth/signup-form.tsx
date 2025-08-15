@@ -9,13 +9,18 @@ import { Button } from "@/components/ui/button";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useToast } from "@/hooks/use-toast";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { createUserWithEmailAndPassword, sendEmailVerification, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
-import { Loader2, KeyRound, Mail } from "lucide-react";
+import { Loader2, KeyRound, Mail, User } from "lucide-react";
 
 const formSchema = z.object({
+  name: z.string().min(3, { message: "Name must be at least 3 characters." }),
   email: z.string().email({ message: "Please enter a valid email." }),
   password: z.string().min(6, { message: "Password must be at least 6 characters." }),
+  confirmPassword: z.string()
+}).refine(data => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
 });
 
 export function SignupForm() {
@@ -26,8 +31,10 @@ export function SignupForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
+      name: "",
       email: "",
       password: "",
+      confirmPassword: "",
     },
   });
 
@@ -35,16 +42,22 @@ export function SignupForm() {
     setIsLoading(true);
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, values.email, values.password);
-      const idToken = await userCredential.user.getIdToken();
+      const user = userCredential.user;
       
-      document.cookie = `token=${idToken}; path=/; max-age=86400;`;
+      await updateProfile(user, {
+        displayName: values.name,
+      });
+
+      await sendEmailVerification(user);
+      
+      // We are not setting the cookie here, user will be redirected to verify email page
+      // And will login after verification.
 
       toast({
         title: "Account Created!",
-        description: "Welcome to Chartly!",
+        description: "A verification email has been sent. Please verify your email before logging in.",
       });
-      router.push('/');
-      router.refresh();
+      router.push('/verify-email');
     } catch (error: any) {
       toast({
         variant: "destructive",
@@ -59,6 +72,22 @@ export function SignupForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <FormField
+          control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Full Name</FormLabel>
+               <div className="relative">
+                 <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <FormControl>
+                  <Input placeholder="John Doe" {...field} className="pl-10" />
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="email"
@@ -81,6 +110,22 @@ export function SignupForm() {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Password</FormLabel>
+              <div className="relative">
+                <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} className="pl-10"/>
+                </FormControl>
+              </div>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="confirmPassword"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Confirm Password</FormLabel>
               <div className="relative">
                 <KeyRound className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <FormControl>
