@@ -9,7 +9,7 @@ import pandas as pd
 import numpy as np
 import google.generativeai as genai
 from dotenv import load_dotenv
-
+import uvicorn
 # Load environment variables
 load_dotenv()
 
@@ -518,5 +518,5 @@ async def get_insights(request: DataRequest):
         raise HTTPException(status_code=500, detail=f"Internal server error: {str(e)}")
 
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
