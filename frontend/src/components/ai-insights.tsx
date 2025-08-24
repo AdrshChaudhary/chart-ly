@@ -46,6 +46,15 @@ export function AIInsights({ data }: AIInsightsProps) {
         setIsLoading(false);
     }
   };
+  
+  const formatInsights = (text: string | null) => {
+    if (!text) return '';
+    // Basic markdown to HTML conversion
+    return text
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') // Bold
+      .replace(/^- (.*)/gm, '<p class="mb-2">- $1</p>') // List items with spacing
+      .replace(/\n/g, '<br />'); // Newlines
+  }
 
   return (
     <Card>
@@ -71,7 +80,7 @@ export function AIInsights({ data }: AIInsightsProps) {
               <Skeleton className="h-4 w-5/6" />
             </div>
           ) : (
-            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: insights ? insights.replace(/\n/g, '<br />') : '' }} />
+            <div className="prose prose-sm max-w-none text-foreground" dangerouslySetInnerHTML={{ __html: formatInsights(insights) }} />
           )}
         </CardContent>
       )}

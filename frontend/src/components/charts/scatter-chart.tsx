@@ -2,22 +2,21 @@
 "use client"
 
 import { Scatter, ScatterChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { ColumnInfo } from '@/lib/chart-utils';
+import type { ChartSuggestion } from '@/lib/chart-utils';
 
 interface ChartProps {
     data: any[];
-    columnInfo: ColumnInfo[];
+    config: ChartSuggestion;
 }
 
-export default function ScatterChartComponent({ data, columnInfo }: ChartProps) {
-    const numericColumns = columnInfo.filter(c => c.type === 'numeric');
+export default function ScatterChartComponent({ data, config }: ChartProps) {
+    const { xAxis: xAxisKey, yAxis: yAxisKeys } = config;
 
-    if (numericColumns.length < 2) {
-        return <div className="text-center text-muted-foreground p-4">Scatter chart requires at least two numeric columns.</div>;
+    if (!xAxisKey || !yAxisKeys || yAxisKeys.length === 0) {
+        return <div className="text-center text-muted-foreground p-4">Scatter chart configuration is invalid.</div>;
     }
 
-    const xAxisKey = numericColumns[0].name;
-    const yAxisKey = numericColumns[1].name;
+    const yAxisKey = yAxisKeys[0];
 
     return (
         <div style={{ width: '100%', height: 300 }}>

@@ -2,28 +2,27 @@
 "use client"
 
 import { Line, LineChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { ColumnInfo } from '@/lib/chart-utils';
-import { findKey, isDate } from '@/lib/chart-utils';
+import type { ChartSuggestion } from '@/lib/chart-utils';
+import { isDate } from '@/lib/chart-utils';
 
 interface ChartProps {
     data: any[];
-    columnInfo: ColumnInfo[];
+    config: ChartSuggestion;
 }
 
-export default function LineChartComponent({ data, columnInfo }: ChartProps) {
-    const dateKey = findKey(columnInfo, 'date');
-    const categoryKey = findKey(columnInfo, 'categorical');
-    const xAxisKey = dateKey || categoryKey;
-    const valueKey = findKey(columnInfo, 'numeric');
+export default function LineChartComponent({ data, config }: ChartProps) {
+    const { xAxis: xAxisKey, yAxis: yAxisKeys } = config;
 
-    if (!xAxisKey || !valueKey) {
-        return <div className="text-center text-muted-foreground p-4">Line chart requires a date/text column and a numeric column.</div>;
+    if (!xAxisKey || !yAxisKeys || yAxisKeys.length === 0) {
+        return <div className="text-center text-muted-foreground p-4">Line chart configuration is invalid.</div>;
     }
+
+    const yAxisKey = yAxisKeys[0]; // Assuming one y-axis for simplicity
 
     const formattedData = data.map(item => {
         const newItem = {...item};
-        if (dateKey && isDate(newItem[dateKey])) {
-            newItem[dateKey] = new Date(item[dateKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (isDate(newItem[xAxisKey])) {
+            newItem[xAxisKey] = new Date(item[xAxisKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
         return newItem;
     });
@@ -43,7 +42,7 @@ export default function LineChartComponent({ data, columnInfo }: ChartProps) {
                         }}
                     />
                     <Legend wrapperStyle={{fontSize: "14px"}}/>
-                    <Line type="monotone" dataKey={valueKey} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 8 }} />
+                    <Line type="monotone" dataKey={yAxisKey} name={yAxisKey} stroke="hsl(var(--primary))" strokeWidth={2} dot={{ r: 4, fill: "hsl(var(--primary))" }} activeDot={{ r: 8 }} />
                 </LineChart>
             </ResponsiveContainer>
         </div>

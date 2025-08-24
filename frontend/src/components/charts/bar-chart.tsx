@@ -1,21 +1,21 @@
+
 "use client"
 
 import { Bar, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { ColumnInfo } from '@/lib/chart-utils';
-import { findKey } from '@/lib/chart-utils';
+import type { ChartSuggestion } from '@/lib/chart-utils';
 
 interface ChartProps {
     data: any[];
-    columnInfo: ColumnInfo[];
+    config: ChartSuggestion;
 }
 
-export default function BarChartComponent({ data, columnInfo }: ChartProps) {
-    const categoryKey = findKey(columnInfo, 'categorical');
-    const valueKey = findKey(columnInfo, 'numeric');
+export default function BarChartComponent({ data, config }: ChartProps) {
+    const { xAxis: categoryKey, yAxis: valueKeys } = config;
 
-    if (!categoryKey || !valueKey) {
-        return <div className="text-center text-muted-foreground p-4">Bar chart requires a text column and a numeric column.</div>;
+    if (!categoryKey || !valueKeys || valueKeys.length === 0) {
+        return <div className="text-center text-muted-foreground p-4">Bar chart configuration is invalid.</div>;
     }
+    const valueKey = valueKeys[0];
 
     return (
         <div style={{ width: '100%', height: 300 }}>
@@ -32,7 +32,7 @@ export default function BarChartComponent({ data, columnInfo }: ChartProps) {
                         }}
                     />
                     <Legend wrapperStyle={{fontSize: "14px"}}/>
-                    <Bar dataKey={valueKey} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey={valueKey} name={valueKey} fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
                 </BarChart>
             </ResponsiveContainer>
         </div>

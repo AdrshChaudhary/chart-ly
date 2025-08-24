@@ -2,28 +2,26 @@
 "use client"
 
 import { Area, AreaChart, CartesianGrid, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import type { ColumnInfo } from '@/lib/chart-utils';
-import { findKey, isDate } from '@/lib/chart-utils';
+import type { ChartSuggestion } from '@/lib/chart-utils';
+import { isDate } from '@/lib/chart-utils';
 
 interface ChartProps {
     data: any[];
-    columnInfo: ColumnInfo[];
+    config: ChartSuggestion;
 }
 
-export default function AreaChartComponent({ data, columnInfo }: ChartProps) {
-    const dateKey = findKey(columnInfo, 'date');
-    const categoryKey = findKey(columnInfo, 'categorical');
-    const xAxisKey = dateKey || categoryKey;
-    const valueKey = findKey(columnInfo, 'numeric');
+export default function AreaChartComponent({ data, config }: ChartProps) {
+    const { xAxis: xAxisKey, yAxis: yAxisKeys } = config;
 
-    if (!xAxisKey || !valueKey) {
-        return <div className="text-center text-muted-foreground p-4">Area chart requires a date/text column and a numeric column.</div>;
+    if (!xAxisKey || !yAxisKeys || yAxisKeys.length === 0) {
+        return <div className="text-center text-muted-foreground p-4">Area chart configuration is invalid.</div>;
     }
+    const yAxisKey = yAxisKeys[0];
 
     const formattedData = data.map(item => {
         const newItem = {...item};
-        if (dateKey && isDate(newItem[dateKey])) {
-            newItem[dateKey] = new Date(item[dateKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+        if (isDate(newItem[xAxisKey])) {
+            newItem[xAxisKey] = new Date(item[xAxisKey]).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         }
         return newItem;
     });
@@ -49,10 +47,9 @@ export default function AreaChartComponent({ data, columnInfo }: ChartProps) {
                         }}
                     />
                     <Legend wrapperStyle={{fontSize: "14px"}}/>
-                    <Area type="monotone" dataKey={valueKey} stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorUv)" />
+                    <Area type="monotone" dataKey={yAxisKey} name={yAxisKey} stroke="hsl(var(--primary))" fillOpacity={1} fill="url(#colorUv)" />
                 </AreaChart>
             </ResponsiveContainer>
         </div>
     );
 }
-

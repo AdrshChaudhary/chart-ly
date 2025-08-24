@@ -5,11 +5,11 @@ import * as React from 'react';
 import { ChartGrid } from '@/components/chart-grid';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Upload, BarChart, TrendingUp, Users, Wallet, Share2, Download } from 'lucide-react';
+import { Upload, BarChart, TrendingUp, Users, Wallet, BarChartHorizontal } from 'lucide-react';
 import Link from 'next/link';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ColumnInfo } from '@/lib/chart-utils';
+import { ColumnInfo, ChartSuggestion } from '@/lib/chart-utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AIInsights } from '@/components/ai-insights';
 
@@ -20,26 +20,6 @@ export type ParsedData = {
   };
 };
 
-const dummyData = {
-    data: [
-      { month: 'Jan 2023', sales: 4000, profit: 2400, expenses: 2200, users: 100, region: 'North' },
-      { month: 'Feb 2023', sales: 3000, profit: 1398, expenses: 2000, users: 120, region: 'North' },
-      { month: 'Mar 2023', sales: 5000, profit: 9800, expenses: 2500, users: 150, region: 'South' },
-      { month: 'Apr 2023', sales: 2780, profit: 3908, expenses: 2100, users: 130, region: 'South' },
-      { month: 'May 2023', sales: 1890, profit: 4800, expenses: 1500, users: 110, region: 'East' },
-      { month: 'Jun 2023', sales: 2390, profit: 3800, expenses: 1800, users: 140, region: 'East' },
-      { month: 'Jul 2023', sales: 3490, profit: 4300, expenses: 2300, users: 160, region: 'West' },
-      { month: 'Aug 2023', sales: 4200, profit: 5100, expenses: 2400, users: 180, region: 'West' },
-      { month: 'Sep 2023', sales: 3800, profit: 4500, expenses: 2000, users: 170, region: 'North' },
-      { month: 'Oct 2023', sales: 4500, profit: 6200, expenses: 2800, users: 190, region: 'South' },
-      { month: 'Nov 2023', sales: 5100, profit: 7100, expenses: 3000, users: 210, region: 'East' },
-      { month: 'Dec 2023', sales: 5800, profit: 8200, expenses: 3200, users: 230, region: 'West' },
-    ],
-    meta: {
-        fields: ['month', 'sales', 'profit', 'expenses', 'users', 'region']
-    }
-}
-
 type KpiCardProps = {
     title: string;
     value: string;
@@ -48,13 +28,11 @@ type KpiCardProps = {
 }
 
 type ChartSuggestionResponse = {
-  suggestions: ('line' | 'bar' | 'pie' | 'scatter' | 'radar' | 'area')[];
+  suggestions: ChartSuggestion[];
   columnInfo: ColumnInfo[];
-};
-
-type SavedFile = {
-  fileName: string;
-  timestamp: number;
+  processedData?: any[];
+  originalRowCount?: number;
+  processedRowCount?: number;
 };
 
 function KpiCard({ title, value, icon: Icon, description }: KpiCardProps) {
@@ -73,22 +51,19 @@ function KpiCard({ title, value, icon: Icon, description }: KpiCardProps) {
 }
 
 export default function DashboardPage() {
-  const [parsedData, setParsedData] = React.useState<ParsedData | null>(null);
+  const [originalData, setOriginalData] = React.useState<ParsedData | null>(null);
+  const [chartResponse, setChartResponse] = React.useState<ChartSuggestionResponse | null>(null);
   const [filteredData, setFilteredData] = React.useState<any[] | null>(null);
-  const [columnInfo, setColumnInfo] = React.useState<ColumnInfo[]>([]);
-  const [chartSuggestions, setChartSuggestions] = React.useState<ChartSuggestionResponse['suggestions']>([]);
   const [fileName, setFileName] = React.useState<string>('');
   const [filters, setFilters] = React.useState<Record<string, string>>({});
   const [isLoadingCharts, setIsLoadingCharts] = React.useState(false);
-
+  
   const { toast } = useToast();
   const router = useRouter();
-  const searchParams = useSearchParams();
 
   const fetchChartSuggestions = React.useCallback(async (data: any[]) => {
     if (data.length === 0) {
-      setChartSuggestions([]);
-      setColumnInfo([]);
+      setChartResponse(cr => cr ? {...cr, suggestions: []} : null);
       return;
     }
     setIsLoadingCharts(true);
@@ -100,116 +75,49 @@ export default function DashboardPage() {
       });
       if (!response.ok) throw new Error('Failed to get chart suggestions.');
       const result: ChartSuggestionResponse = await response.json();
-      setChartSuggestions(result.suggestions);
-      setColumnInfo(result.columnInfo);
+      setChartResponse(result);
+      
     } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Error',
         description: error.message || 'Could not load chart suggestions.',
       });
-      setChartSuggestions([]);
-      setColumnInfo([]);
+      setChartResponse(null);
     } finally {
       setIsLoadingCharts(false);
     }
   }, [toast]);
   
   const processData = React.useCallback((data: ParsedData, name: string) => {
-    setParsedData(data);
+    setOriginalData(data);
     setFilteredData(data.data);
     setFileName(name);
-    fetchChartSuggestions(data.data);
     setFilters({});
+    fetchChartSuggestions(data.data);
   }, [fetchChartSuggestions]);
 
-  const saveFileToHistory = React.useCallback((fileName: string, parsedData: ParsedData) => {
-      try {
-        localStorage.setItem(`chartly-file-${fileName}`, JSON.stringify(parsedData));
-
-        const savedFilesString = localStorage.getItem('savedChartlyFiles');
-        let savedFiles: SavedFile[] = savedFilesString ? JSON.parse(savedFilesString) : [];
-        
-        savedFiles = savedFiles.filter(f => f.fileName !== fileName);
-        savedFiles.unshift({ fileName, timestamp: Date.now() });
-        savedFiles = savedFiles.slice(0, 5); // Limit history to 5 files
-
-        localStorage.setItem('savedChartlyFiles', JSON.stringify(savedFiles));
-
-        // This event will notify the layout to update the history
-        window.dispatchEvent(new Event('storage'));
-
-      } catch (e) {
-          console.error("Could not save file to local storage", e);
-          toast({
-            variant: "destructive",
-            title: "Could not save to history",
-            description: "Your browser's local storage might be full."
-          })
-      }
-  }, [toast]);
-
-
   React.useEffect(() => {
-    const dataParam = searchParams.get('data');
-    const loadParam = searchParams.get('load');
-
-    if (dataParam) {
-        try {
-            const decodedData = JSON.parse(decodeURIComponent(dataParam));
-            processData(decodedData.parsedData, decodedData.fileName);
-            saveFileToHistory(decodedData.fileName, decodedData.parsedData);
-            toast({
-                title: "File processed successfully!",
-                description: `Showing dashboard for ${decodedData.fileName}`
-            });
-            router.replace('/dashboard', { scroll: false });
-        } catch (e) {
-            console.error('Failed to parse data from URL', e);
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not load data from the previous page.'
-            });
-        }
-    } else if (loadParam) {
-        try {
-          const fileName = decodeURIComponent(loadParam);
-          const fileData = localStorage.getItem(`chartly-file-${fileName}`);
-          if (fileData) {
-            const parsedData = JSON.parse(fileData);
-            processData(parsedData, fileName);
-             toast({
-                title: "Loaded from history",
-                description: `Showing dashboard for ${fileName}`
-            });
-          } else {
-             toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not find the specified file in your history.'
-            });
-          }
-          router.replace('/dashboard', { scroll: false });
-        } catch(e) {
-          console.error("Failed to load from history", e)
-           toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Could not load the data from your history.'
-            });
-        }
+    const newUploadDataString = sessionStorage.getItem('chartly-new-upload');
+    if (newUploadDataString) {
+      try {
+        const decodedData = JSON.parse(newUploadDataString);
+        processData(decodedData.parsedData, decodedData.fileName);
+        toast({
+            title: "File processed successfully!",
+            description: `Showing dashboard for ${decodedData.fileName}`
+        });
+        sessionStorage.removeItem('chartly-new-upload');
+      } catch (e) {
+        console.error('Failed to parse data from sessionStorage', e);
+        toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Could not load data from the previous page.'
+        });
+      }
     }
-  }, [searchParams, router, toast, fetchChartSuggestions, processData, saveFileToHistory]);
-
-  const handleDummyData = () => {
-    processData(dummyData, 'dummy-data.json');
-    saveFileToHistory('dummy-data.json', dummyData);
-    toast({
-        title: "Dummy data loaded",
-        description: "Showing charts for dummy-data.json"
-    });
-  };
+  }, [toast, processData]);
 
   const handleFilterChange = (columnName: string, value: string) => {
     const newFilters = { ...filters, [columnName]: value };
@@ -218,7 +126,7 @@ export default function DashboardPage() {
     }
     setFilters(newFilters);
 
-    let dataToFilter = parsedData?.data || [];
+    let dataToFilter = originalData?.data || [];
     Object.entries(newFilters).forEach(([key, val]) => {
       dataToFilter = dataToFilter.filter(row => row[key]?.toString() === val);
     });
@@ -228,32 +136,26 @@ export default function DashboardPage() {
   };
   
   const handleReset = () => {
-    setParsedData(null);
+    setOriginalData(null);
     setFilteredData(null);
     setFileName('');
     setFilters({});
-    setChartSuggestions([]);
-    setColumnInfo([]);
+    setChartResponse(null);
     router.replace('/dashboard', { scroll: false });
   };
   
-  const handleShare = () => {
-    toast({
-      title: "Share Dashboard",
-      description: "This feature is not yet implemented.",
-    });
-  };
-  
-  const handleExport = () => {
-     toast({
-      title: "Export Dashboard",
-      description: "This feature is not yet implemented.",
-    });
-  };
+  const chartData = React.useMemo(() => {
+    if (!chartResponse || !filteredData) return [];
+    if (chartResponse.processedData && chartResponse.processedRowCount && chartResponse.originalRowCount && chartResponse.processedRowCount < chartResponse.originalRowCount) {
+        return chartResponse.processedData;
+    }
+    return filteredData;
+  }, [chartResponse, filteredData]);
+
 
   const kpiMetrics = React.useMemo(() => {
-    if (!filteredData) return [];
-    const numericColumns = columnInfo.filter(c => c.type === 'numeric');
+    if (!filteredData || !chartResponse?.columnInfo) return [];
+    const numericColumns = chartResponse.columnInfo.filter(c => c.type === 'numeric');
     if (numericColumns.length === 0) return [];
 
     return numericColumns.slice(0, 4).map(col => {
@@ -287,15 +189,23 @@ export default function DashboardPage() {
         description: `Total ${col.name}`
       };
     });
-  }, [filteredData, columnInfo]);
+  }, [filteredData, chartResponse?.columnInfo]);
   
   const slicers = React.useMemo(() => {
-    return columnInfo.filter(c => c.type === 'categorical' && (parsedData?.data || []).map(row => row[c.name]).filter((v, i, a) => a.indexOf(v) === i).length < 10);
-  }, [columnInfo, parsedData]);
+    if (!originalData?.data || !chartResponse?.columnInfo) return [];
+    
+    return chartResponse.columnInfo.filter(c => {
+        if (c.type !== 'categorical') return false;
+        const uniqueValues = new Set(originalData.data.map(row => row[c.name]));
+        return uniqueValues.size > 1 && uniqueValues.size <= 20;
+    });
+  }, [chartResponse?.columnInfo, originalData?.data]);
+
+  const showOptimizationIndicator = chartResponse && chartResponse.processedData && chartResponse.processedRowCount && chartResponse.originalRowCount && chartResponse.processedRowCount < chartResponse.originalRowCount;
 
   return (
     <>
-      {!parsedData ? (
+      {!originalData ? (
         <div className="flex items-center justify-center h-full min-h-[calc(100vh-8rem)]">
           <Card className="w-full max-w-lg text-center shadow-none border-0 bg-transparent">
               <CardHeader>
@@ -304,15 +214,12 @@ export default function DashboardPage() {
                   </div>
                   <CardTitle>Visualize Your Data</CardTitle>
                   <CardDescription>
-                  Upload a file to start generating beautiful and insightful charts, or use dummy data to explore the possibilities.
+                  Upload a file to start generating beautiful and insightful charts.
                   </CardDescription>
               </CardHeader>
               <CardContent className="flex justify-center gap-4">
                   <Button asChild>
                       <Link href="/dashboard/upload">Upload File</Link>
-                  </Button>
-                  <Button variant="secondary" onClick={handleDummyData}>
-                      Use Dummy Data
                   </Button>
               </CardContent>
           </Card>
@@ -325,12 +232,6 @@ export default function DashboardPage() {
               <p className="text-muted-foreground">Showing visualizations for {fileName}</p>
             </div>
              <div className="flex flex-wrap gap-2">
-                <Button variant="outline" onClick={handleShare}>
-                    <Share2 className="mr-2 h-4 w-4" /> Share
-                </Button>
-                <Button variant="outline" onClick={handleExport}>
-                    <Download className="mr-2 h-4 w-4" /> Export
-                </Button>
                 <Button onClick={handleReset} variant="outline">Clear Data</Button>
                 <Button asChild>
                     <Link href="/dashboard/upload">Upload New File</Link>
@@ -339,18 +240,18 @@ export default function DashboardPage() {
           </div>
           
           {slicers.length > 0 && (
-            <div className="flex flex-wrap items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4 p-4 bg-card border rounded-lg">
               <p className="text-sm font-medium text-muted-foreground">Filters:</p>
               {slicers.map(slicer => (
                 <div key={slicer.name} className="flex items-center gap-2">
                   <span className="text-sm font-medium">{slicer.name.charAt(0).toUpperCase() + slicer.name.slice(1)}:</span>
-                  <Select onValueChange={(value) => handleFilterChange(slicer.name, value)} defaultValue="all">
-                    <SelectTrigger className="w-[180px]">
+                  <Select onValueChange={(value) => handleFilterChange(slicer.name, value)} value={filters[slicer.name] || 'all'}>
+                    <SelectTrigger className="w-[180px] bg-background">
                       <SelectValue placeholder={`All ${slicer.name}s`} />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="all">All</SelectItem>
-                      {[...new Set(parsedData.data.map(row => row[slicer.name]))].map((option: any) => (
+                      {[...new Set(originalData.data.map(row => row[slicer.name]))].map((option: any) => (
                         <SelectItem key={option} value={option}>{option}</SelectItem>
                       ))}
                     </SelectContent>
@@ -368,10 +269,24 @@ export default function DashboardPage() {
           
           <AIInsights data={filteredData || []} />
 
+          {showOptimizationIndicator && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-center space-x-2">
+                  <BarChartHorizontal className="w-5 h-5 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">
+                    Data Optimized for Visualization
+                  </span>
+                </div>
+                <p className="text-sm text-blue-700 mt-1">
+                  Showing {chartResponse.processedRowCount?.toLocaleString()} aggregated data points 
+                  from {chartResponse.originalRowCount?.toLocaleString()} total records for cleaner charts.
+                </p>
+              </div>
+            )}
+
           <ChartGrid 
-            data={filteredData || []} 
-            suggestions={chartSuggestions}
-            columnInfo={columnInfo}
+            data={chartData} 
+            suggestions={chartResponse?.suggestions || []}
             isLoading={isLoadingCharts}
           />
         </div>
@@ -379,3 +294,5 @@ export default function DashboardPage() {
     </>
   );
 }
+
+    

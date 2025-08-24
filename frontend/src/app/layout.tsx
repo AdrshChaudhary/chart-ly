@@ -2,7 +2,8 @@ import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { AuthProvider } from '@/context/auth-context';
-import { Toaster } from "@/components/ui/toaster"
+import { Toaster } from "@/components/ui/toaster";
+import Footer from '@/components/footer';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
 
@@ -18,10 +19,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`font-sans ${inter.variable} antialiased`}>
+      <body className={`font-sans ${inter.variable} antialiased flex flex-col min-h-dvh`}>
         <AuthProvider>
-          {children}
-          <Toaster />
+            <div className="flex-grow">
+              {children}
+            </div>
+            <Footer />
+            <Toaster />
         </AuthProvider>
       </body>
     </html>

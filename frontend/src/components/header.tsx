@@ -17,13 +17,11 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "./ui/button";
 import { ChartLine, LogOut, LayoutDashboard, Upload } from "lucide-react";
-import { SidebarTrigger } from "./ui/sidebar";
 
 
 export default function Header() {
   const { user } = useAuth();
   const router = useRouter();
-  const pathname = usePathname();
 
   const handleSignOut = async () => {
     await signOut(auth);
@@ -44,16 +42,9 @@ export default function Header() {
     return email[0].toUpperCase();
   }
   
-  const isDashboard = pathname.startsWith('/dashboard');
-
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 max-w-screen-2xl items-center">
-        {isDashboard && user && (
-          <div className="mr-2 md:hidden">
-            <SidebarTrigger />
-          </div>
-        )}
         <Link href="/" className="mr-6 flex items-center space-x-2">
           <ChartLine className="h-6 w-6 text-primary" />
           <span className="font-bold">Chartly</span>

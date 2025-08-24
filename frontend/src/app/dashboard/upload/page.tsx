@@ -23,12 +23,18 @@ export default function UploadPage() {
 
   const handleDataParsed = (data: ParsedData, file: File) => {
     setError(null);
-    const dataToPass = {
-        parsedData: data,
-        fileName: file.name,
-    };
-    const encodedData = encodeURIComponent(JSON.stringify(dataToPass));
-    router.push(`/dashboard?data=${encodedData}`);
+    try {
+      const dataToPass = {
+          parsedData: data,
+          fileName: file.name,
+      };
+      // Use sessionStorage to avoid long URLs that can be blocked.
+      sessionStorage.setItem('chartly-new-upload', JSON.stringify(dataToPass));
+      router.push(`/dashboard`);
+    } catch (e) {
+       const message = "Could not process file. Your browser's session storage might be full or disabled.";
+       onError(message);
+    }
   };
 
   const handleParsingError = (errorMessage: string) => {

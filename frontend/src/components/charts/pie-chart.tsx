@@ -2,13 +2,12 @@
 "use client"
 
 import { Pie, PieChart, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
-import type { ColumnInfo } from '@/lib/chart-utils';
-import { findKey } from '@/lib/chart-utils';
+import type { ChartSuggestion } from '@/lib/chart-utils';
 import * as React from 'react';
 
 interface ChartProps {
     data: any[];
-    columnInfo: ColumnInfo[];
+    config: ChartSuggestion;
 }
 
 const COLORS = [
@@ -20,12 +19,13 @@ const COLORS = [
     'hsl(var(--primary))'
 ];
 
-export default function PieChartComponent({ data, columnInfo }: ChartProps) {
-    const nameKey = findKey(columnInfo, 'categorical');
-    const valueKey = findKey(columnInfo, 'numeric');
+const MAX_SLICES = 6; // Limit the number of pie slices for readability
+
+export default function PieChartComponent({ data, config }: ChartProps) {
+    const { nameKey, valueKey } = config;
 
     if (!nameKey || !valueKey) {
-        return <div className="text-center text-muted-foreground p-4">Pie chart requires a text column and a numeric column.</div>;
+        return <div className="text-center text-muted-foreground p-4">Pie chart configuration is invalid.</div>;
     }
     
     const aggregatedData = React.useMemo(() => {
@@ -42,7 +42,20 @@ export default function PieChartComponent({ data, columnInfo }: ChartProps) {
                 }
             }
         });
-        return Object.entries(result).map(([name, value]) => ({ name, value }));
+        
+        let processedData = Object.entries(result).map(([name, value]) => ({ name, value }));
+
+        // If there are too many slices, group the smallest ones into "Other"
+        if (processedData.length > MAX_SLICES) {
+            processedData.sort((a, b) => b.value - a.value);
+            const topSlices = processedData.slice(0, MAX_SLICES - 1);
+            const otherSlices = processedData.slice(MAX_SLICES - 1);
+            const otherValue = otherSlices.reduce((sum, slice) => sum + slice.value, 0);
+            return [...topSlices, { name: 'Other', value: otherValue }];
+        }
+
+        return processedData;
+
     }, [data, nameKey, valueKey]);
 
 
@@ -68,3 +81,5 @@ export default function PieChartComponent({ data, columnInfo }: ChartProps) {
         </div>
     );
 }
+
+    
