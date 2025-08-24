@@ -12,7 +12,7 @@ AI-powered data visualization platform that transforms raw data files into inter
 
 ## 🔗 Live Application
 
-**Access the web app here**: [Live](https://chart-ly-frontend.vercel.app/)
+**Access the web app here**: [Live](https://chart-ly.vercel.app/)
 
 ---
 
@@ -356,6 +356,6 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 **Built with ❤️**
 
-[Live Demo](https://chart-ly-frontend.vercel.app/) • [Documentation](https://github.com/AdrshChaudhary/chart-ly) • [Report Issues](https://github.com/AdrshChaudhary/chart-ly/issues)
+[Live Demo](https://chart-ly.vercel.app/) • [Documentation](https://github.com/AdrshChaudhary/chart-ly) • [Report Issues](https://github.com/AdrshChaudhary/chart-ly/issues)
 
 </div>
