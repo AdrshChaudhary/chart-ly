@@ -10,7 +10,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     
     // URL of your running Python backend service
-    const pythonBackendUrl = `${process.env.NEXT_PUBLIC_API_URL}/suggestions`;
+    const pythonBackendUrl = `${process.env.NEXT_PUBLIC_API_URL}/charts/suggestions`;
 
     const response = await fetch(pythonBackendUrl, {
       method: 'POST',
