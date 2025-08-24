@@ -22,7 +22,7 @@ AI-powered data visualization platform that transforms raw data files into inter
 **Chartly Landing Page**
 
 ![Steps](00.PNG)  
-**Chartly Landing Page**
+**Steps to get started**
 
 ![Dashboard](0.PNG)  
 **Interactive Dashboard with AI-Generated Charts**
